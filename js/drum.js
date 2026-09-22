@@ -22,7 +22,7 @@ const FRAG = /* glsl */`
   varying float vFace;
   void main() {
     vec3 tex = texture2D(map, vUv * uRepeat + uOffset).rgb;
-    vec3 c = mix(vec3(0.9), tex, uLoaded);
+    vec3 c = mix(vec3(0.06), tex, uLoaded);
     float s = smoothstep(0.1, 0.985, vFace);
     gl_FragColor = vec4(mix(uBg, c, 0.08 + 0.92 * s), 1.0);
     #include <colorspace_fragment>
@@ -59,9 +59,13 @@ class Drum {
     if (!src) return u;
     if (isVideo(src)) {
       const v = Object.assign(document.createElement('video'), { src, muted: true, loop: true, playsInline: true, crossOrigin: 'anonymous', preload: 'auto' });
-      v.addEventListener('loadedmetadata', () => fit(v.videoWidth, v.videoHeight));
+      v.setAttribute('muted', ''); v.setAttribute('playsinline', ''); v.setAttribute('autoplay', '');
+      // 사파리 등은 DOM 밖 영상의 프레임을 넘겨주지 않는다 → 화면 안에 거의 보이지 않게 붙여 둔다
+      v.style.cssText = 'position:absolute;left:0;top:0;width:2px;height:2px;opacity:0.01;pointer-events:none;';
+      this.el.appendChild(v);
+      v.addEventListener('loadeddata', () => fit(v.videoWidth, v.videoHeight));
       const t = new THREE.VideoTexture(v); t.colorSpace = THREE.SRGBColorSpace;
-      u.map.value = t; this.videos.push(v);
+      u.map.value = t; this.videos.push(v); this.vtex = (this.vtex || []).concat(t);
       return u;
     }
     loader.load(src, (t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; u.map.value = t; fit(t.image.width, t.image.height); });
@@ -102,7 +106,7 @@ class Drum {
   dispose() {
     this.meshes.forEach((m) => { m.geometry.dispose(); m.material.dispose(); });
     this.textures.forEach((u) => u.map.value?.dispose());
-    this.videos.forEach((v) => { v.pause(); v.removeAttribute('src'); v.load(); });
+    this.videos.forEach((v) => { v.pause(); v.removeAttribute('src'); v.load(); v.remove(); });
   }
 }
 
@@ -129,6 +133,7 @@ export class Drums {
         continue;
       }
       drum.videos.forEach((v) => v.paused && v.play().catch(() => {}));
+      (drum.vtex || []).forEach((t) => { if (t.image && t.image.readyState >= 2) t.needsUpdate = true; });
       const aspect = rect.width / rect.height;
       if (Math.abs(aspect - drum.aspect) > 0.002) drum.build(aspect);
       // 요소가 화면 아래→위로 지나는 동안 첫 장→마지막 장이 정면을 지난다
@@ -146,3 +151,7 @@ export class Drums {
     r.setViewport(0, 0, W, H);
   }
 }
+
+// 저전력 모드 등으로 자동재생이 막힌 경우 — 첫 터치·클릭·스크롤 키 입력 때 원통 영상을 다시 재생
+const kick = () => document.querySelectorAll('.drum-stage video').forEach((v) => v.paused && v.play().catch(() => {}));
+['pointerdown', 'touchstart', 'keydown', 'wheel'].forEach((ev) => addEventListener(ev, kick, { passive: true, capture: true }));

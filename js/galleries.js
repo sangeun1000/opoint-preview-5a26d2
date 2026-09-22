@@ -14,7 +14,7 @@ const ytOf = (s = '') => (String(s).match(/(?:youtu\.be\/|youtube\.com\/(?:watch
 const media = (src) => {
   const [url, fb] = String(src).split('|');   // 'YouTube 주소|사이트 안 대체 영상'
   const yt = ytOf(url);
-  if (yt) return `<div class="g-media g-yt-embed">${fb ? `<video class="yt-fallback" src="${esc(fb)}" muted loop playsinline autoplay preload="auto"></video>` : ''}<iframe src="https://www.youtube.com/embed/${yt}?autoplay=1&mute=1&loop=1&playlist=${yt}&controls=0&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3&cc_load_policy=0&enablejsapi=1&origin=${encodeURIComponent(location.origin)}" title="YouTube" allow="autoplay; encrypted-media; picture-in-picture" tabindex="-1"></iframe></div>`;
+  if (yt) return `<div class="g-media g-yt-embed">${fb ? `<video class="yt-fallback" src="${esc(fb)}" muted loop playsinline autoplay preload="auto"></video>` : ''}<iframe src="https://www.youtube.com/embed/${yt}?autoplay=1&mute=1&loop=1&playlist=${yt}&controls=0&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3&cc_load_policy=0&cc_lang_pref=none&enablejsapi=1&origin=${encodeURIComponent(location.origin)}" title="YouTube" allow="autoplay; encrypted-media; picture-in-picture" tabindex="-1"></iframe></div>`;
   return isVideo(src)
     ? `<video class="g-media" src="${esc(src)}" muted loop playsinline autoplay preload="metadata" data-lazyplay></video>`
     : `<img class="g-media" src="${esc(src)}" alt="" loading="lazy">`;
@@ -77,7 +77,7 @@ function buildInner(fig, cfg, { mountDrum }) {
     const poster = cfg.poster ? `style="background-image:url('${esc(cfg.poster)}')"` : '';
     fig.style.setProperty('--n', m);
     fig.className = `slot g-rail g-yt${fig.classList.contains('wide') ? ' wide' : ''}`;
-    const EMBED = (id) => `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&controls=0&playsinline=1&rel=0&modestbranding=1`;
+    const EMBED = (id) => `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&controls=0&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3&cc_load_policy=0&cc_lang_pref=none`;
     fig.innerHTML = `<div class="rail-sticky"><div class="rail-track">${vids.map((v, i) => `<div class="rail-item yt-card" data-yt="${esc(v.id)}">
         <div class="g-frame yt-thumb" ${poster}><img src="${esc(v.thumb || `https://i.ytimg.com/vi/${v.id}/hqdefault.jpg`)}" alt="" loading="lazy" onerror="this.remove()"><span class="yt-slot"></span>
           <a class="yt-hit" href="https://youtu.be/${esc(v.id)}" target="_blank" rel="noopener" aria-label="${esc(v.title)} — 유튜브에서 보기"></a>
@@ -238,6 +238,7 @@ function pingYT() {
     // 유튜브 자동 자막 끄기 — 시청자 설정으로 자막이 켜져도 사이트 안에서는 내린다
     send({ event: 'command', func: 'unloadModule', args: ['captions'] });
     send({ event: 'command', func: 'unloadModule', args: ['cc'] });
+    send({ event: 'command', func: 'setOption', args: ['captions', 'track', {}] });
   });
 }
 setInterval(pingYT, 700);

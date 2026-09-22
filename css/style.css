@@ -589,7 +589,7 @@ main, .hdr { position: relative; z-index: 1; }
 .stats div + div { border-left: 1px solid var(--line); }
 .stats b { font-family: var(--f-disp); font-stretch: 125%; font-weight: 800; font-size: clamp(44px, 6vw, 96px); line-height: 0.9; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 .stats span { color: var(--ink-2); }
-.clients { overflow: hidden; padding-block: 6px; border-bottom: 1px solid var(--line); -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.clients { overflow: hidden; padding-block: 6px; border-bottom: 1px solid var(--line); -webkit-mask-image: linear-gradient(90deg, transparent, #000 16%, #000 84%, transparent); mask-image: linear-gradient(90deg, transparent, #000 16%, #000 84%, transparent); }
 .cl-track { display: flex; align-items: center; gap: 22px; width: max-content; animation: ps-flow 60s linear infinite; font-size: 13px; letter-spacing: 0.08em; }
 .cl-track i { font-style: normal; color: var(--ink-2); }
 
@@ -904,3 +904,15 @@ body[data-ch="ign"] { --pch: var(--c-ign); }
 .sound-btn { position: absolute; right: 14px; bottom: 14px; z-index: 30; pointer-events: auto; background: rgba(0,0,0,.55); color: #fff; border: 1px solid rgba(255,255,255,.7); padding: 7px 12px; font-size: 12px; letter-spacing: .08em; cursor: pointer; }
 .sound-btn.on { background: var(--ch, #fee336); color: #0a0a0b; border-color: transparent; }
 .sound-btn:hover, .sound-btn:focus-visible { background: #fff; color: #0a0a0b; }
+
+/* v11 — 04 영상 테두리 제거 (주변과 경계 없음) */
+#s04 .g-stack .card { outline: 0 !important; box-shadow: none !important; background: transparent; }
+#s04 .g-frame, #s04 .g-yt-embed { background-color: transparent; box-shadow: none; border: 0; outline: 0; }
+#s04 .g-yt-embed { background-image: none; }
+/* 04 영상 가장자리를 배경으로 자연스럽게 흐리기 */
+#s04 .g-yt-embed, #s04 .g-stack .card {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 16%, #000 84%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 18%, #000 82%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, transparent 0, #000 16%, #000 84%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 18%, #000 82%, transparent 100%);
+  mask-composite: intersect;
+}
