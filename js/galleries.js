@@ -14,7 +14,7 @@ const ytOf = (s = '') => (String(s).match(/(?:youtu\.be\/|youtube\.com\/(?:watch
 const media = (src) => {
   const [url, fb] = String(src).split('|');   // 'YouTube 주소|사이트 안 대체 영상'
   const yt = ytOf(url);
-  if (yt) return `<div class="g-media g-yt-embed">${fb ? `<video class="yt-fallback" src="${esc(fb)}" muted loop playsinline autoplay preload="auto"></video>` : ''}<iframe src="https://www.youtube.com/embed/${yt}?autoplay=1&mute=1&loop=1&playlist=${yt}&controls=0&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1&origin=${encodeURIComponent(location.origin)}" title="YouTube" allow="autoplay; encrypted-media; picture-in-picture" tabindex="-1"></iframe></div>`;
+  if (yt) return `<div class="g-media g-yt-embed">${fb ? `<video class="yt-fallback" src="${esc(fb)}" muted loop playsinline autoplay preload="auto"></video>` : ''}<iframe src="https://www.youtube.com/embed/${yt}?autoplay=1&mute=1&loop=1&playlist=${yt}&controls=0&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3&cc_load_policy=0&enablejsapi=1&origin=${encodeURIComponent(location.origin)}" title="YouTube" allow="autoplay; encrypted-media; picture-in-picture" tabindex="-1"></iframe></div>`;
   return isVideo(src)
     ? `<video class="g-media" src="${esc(src)}" muted loop playsinline autoplay preload="metadata" data-lazyplay></video>`
     : `<img class="g-media" src="${esc(src)}" alt="" loading="lazy">`;
@@ -46,7 +46,7 @@ function sectionProgress(id) {
   return clamp01(-r.top / span / (1 - (+el.dataset.hold || 0)));   // data-hold: 끝부분은 멈춰 있는 구간
 }
 
-export function buildGallery(fig, cfg, { mountDrum }) {
+function buildInner(fig, cfg, { mountDrum }) {
   const items = (cfg.images && cfg.images.length ? cfg.images : ['']);
   const [rw, rh] = String(cfg.ratio || '16 / 9').split('/').map(Number);
   const mode = cfg.mode || 'stack';
@@ -232,8 +232,51 @@ addEventListener('message', (e) => {
   });
 });
 function pingYT() {
-  document.querySelectorAll('.g-yt-embed:not(.yt-on) iframe').forEach((f) => {
-    try { f.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), '*'); } catch {}
+  document.querySelectorAll('.g-yt-embed iframe').forEach((f) => {
+    const send = (o) => { try { f.contentWindow.postMessage(JSON.stringify(o), '*'); } catch {} };
+    if (!f.closest('.yt-on')) send({ event: 'listening', id: 1, channel: 'widget' });
+    // 유튜브 자동 자막 끄기 — 시청자 설정으로 자막이 켜져도 사이트 안에서는 내린다
+    send({ event: 'command', func: 'unloadModule', args: ['captions'] });
+    send({ event: 'command', func: 'unloadModule', args: ['cc'] });
   });
 }
 setInterval(pingYT, 700);
+
+/* ── 소리: 04·14 영상 — 처음엔 무음 자동재생, 클릭(아무 곳이나) 또는 SOUND 버튼으로 소리 켜기.
+      화면에 가장 크게 보이는 영상 하나만 소리를 내고, 벗어나면 자동으로 무음 ── */
+export function buildGallery(fig, cfg, opts) {
+  buildInner(fig, cfg, opts);
+  if (cfg.sound) addSound(fig);
+}
+const soundFigs = [];
+let soundOn = false;
+function addSound(fig) {
+  const frame = fig.querySelector('.g-frame') || fig;
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'sound-btn mono'; b.textContent = 'SOUND OFF';
+  b.addEventListener('click', (e) => { e.stopPropagation(); soundOn = !soundOn; syncSound(); });
+  frame.appendChild(b);
+  soundFigs.push(fig);
+}
+const ytSend = (f, func, args = []) => { try { f.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args }), '*'); } catch {} };
+function syncSound() {
+  // 가장 많이 보이는 소리 영상 하나 고르기
+  let best = null, bestA = 0;
+  soundFigs.forEach((fig) => {
+    const r = fig.getBoundingClientRect();
+    const vis = Math.max(0, Math.min(innerHeight, r.bottom) - Math.max(0, r.top));
+    const a = r.height ? vis / Math.min(r.height, innerHeight) : 0;
+    if (a > 0.55 && a > bestA) { best = fig; bestA = a; }
+  });
+  soundFigs.forEach((fig) => {
+    const on = soundOn && fig === best;
+    fig.querySelectorAll('video').forEach((v) => { v.muted = !on; if (on && v.paused) v.play().catch(() => {}); });
+    fig.querySelectorAll('.g-yt-embed iframe').forEach((f) => { if (on) { ytSend(f, 'unMute'); ytSend(f, 'setVolume', [100]); } else ytSend(f, 'mute'); });
+    const b = fig.querySelector('.sound-btn'); if (b) { b.textContent = soundOn ? 'SOUND ON' : 'SOUND OFF'; b.classList.toggle('on', soundOn); }
+  });
+}
+const firstGesture = () => { if (!soundOn) { soundOn = true; syncSound(); } removeEventListener('pointerdown', firstGesture, true); removeEventListener('keydown', firstGesture, true); };
+addEventListener('pointerdown', firstGesture, true);
+addEventListener('keydown', firstGesture, true);
+addEventListener('scroll', () => syncSound(), { passive: true });
+setInterval(syncSound, 500);
