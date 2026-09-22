@@ -916,3 +916,8 @@ body[data-ch="ign"] { --pch: var(--c-ign); }
   mask-image: linear-gradient(to right, transparent 0, #000 16%, #000 84%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 18%, #000 82%, transparent 100%);
   mask-composite: intersect;
 }
+/* v12 — 07 브랜드 필름: 원통 대신 영상 한 편을 바로 재생 */
+@media (min-width: 901px) and (prefers-reduced-motion: no-preference) { #s07 { padding-bottom: clamp(96px, 14vh, 160px); } }
+#s07 .single-frame { width: 100%; background: #000; }
+#s07 .single-frame .g-media { width: 100%; height: 100%; object-fit: cover; display: block; }
+#s07 .slot.wide { width: min(100%, 1280px, calc((100vh - 330px) * 16 / 9)); margin-inline: auto; }

@@ -51,8 +51,8 @@
       s05_video_b: { tag: '영상', spec: '신규 기능', ratio: '1 / 1', mode: 'columns', dir: -1,
         caption: 'AI 영상 — USMEF A.I. Creative Campaign · AI 브랜드필름', images: [img(usmef, 0), img(usmef, 1), L(2), L(4), L(8)].filter(Boolean) },
       // 07장 — 브랜드 필름 샘플
-      s07_film: { tag: '영상', spec: '브랜드 필름 샘플', ratio: '16 / 9', mode: 'drum',
-        caption: FILM, images: [L(1), L(4), L(5), L(6), L(8)].filter(Boolean) },
+      s07_film: { tag: '영상', spec: '브랜드 필름', ratio: '16 / 9', mode: 'single', sound: true,
+        caption: FILM, images: ['assets/film/brand_film.mp4'] },
       // 13장 — 로고 영상 / 크루 4인 이미지   (02_회사소개서/3. OPOINT IP/13_로고영상_크루4인)
       s13_video: { tag: '영상', spec: '로고 영상 ／ 크루 4인 이미지', ratio: '16 / 9', mode: 'reveal',
         caption: 'OPOINT IP — CREW 4 · RAM · CHLOE · ILYR · YEON', hold: 0.25,
