@@ -8,7 +8,7 @@
 <meta name="description" content="O.POINT — CREATIVE LABEL · 2026">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@112..125,500..800&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="css/style.css">
 <script type="importmap">
 { "imports": {
@@ -20,22 +20,24 @@
 </head>
 <body>
 <canvas id="gl" aria-hidden="true"></canvas>
+<div class="progress" aria-hidden="true"><i id="progressBar"></i></div>
 
 <header class="hdr" id="hdr">
   <a class="hdr-mark" href="#s01" data-nav aria-label="O.POINT 처음으로">
     <span class="logo-symbol" data-logo="symbol"></span>
   </a>
   <nav class="hdr-nav mono" aria-label="챕터">
-    <a href="#s03" data-nav data-scramble>START POINT</a>
-    <a href="#s07" data-nav data-scramble>NEW MEDIA</a>
-    <a href="#s12" data-nav data-scramble>POINT OF VIEW</a>
-    <a href="#s16" data-nav data-scramble>POINT OF IGNITION</a>
+    <a href="#s03" data-nav data-scramble data-ch="sp">START POINT</a>
+    <a href="#s07" data-nav data-scramble data-ch="nm">NEW MEDIA</a>
+    <a href="#s12" data-nav data-scramble data-ch="pov">POINT OF VIEW</a>
+    <a href="#s16" data-nav data-scramble data-ch="ign">POINT OF IGNITION</a>
   </nav>
   <div class="hdr-right">
     <span class="mono counter" id="counter" aria-live="polite">[ 01 / 18 ]</span>
-    <a class="pill mono" href="#contact" data-nav data-scramble>CONTACT</a>
+    <a class="pill mono" href="mailto:lyj@hahmshoutg.com" id="contactPill" data-scramble>CONTACT</a>
   </div>
 </header>
+
 
 <main id="deck">
 
@@ -59,7 +61,7 @@
   </section>
 
   <!-- 03 ─ 챕터: 출발점 -->
-  <section class="sec chapter tall" id="s03" data-slide="3" data-tone="light">
+  <section class="sec chapter tall" id="s03" data-ch="sp" data-slide="3" data-tone="light">
     <div class="sticky">
       <span class="stamp mono">[ 03 / 18 ]</span>
       <p class="giant" aria-hidden="true">START POINT</p>
@@ -71,20 +73,16 @@
     </div>
   </section>
 
-  <!-- 04 -->
-  <section class="sec" id="s04" data-slide="4" data-tone="light">
+  <!-- 04 — OPOINT → VISUAL STUDIO : 영상만 (유튜브 무음 자동재생 · 0922) -->
+  <section class="sec s04-film" id="s04" data-ch="sp" data-slide="4" data-tone="light">
     <span class="stamp mono">[ 04 / 18 ]</span>
     <div class="s04-grid">
       <figure class="slot" data-slot="s04_video"></figure>
-      <div class="s04-side mono">
-        <p class="dim">OPOINT ↓ VISUAL STUDIO</p>
-        <p class="morph" id="morph" aria-hidden="true">OPOINT</p>
-      </div>
     </div>
   </section>
 
   <!-- 05 -->
-  <section class="sec" id="s05" data-slide="5" data-tone="light">
+  <section class="sec" id="s05" data-ch="sp" data-slide="5" data-tone="light">
     <span class="stamp mono">[ 05 / 18 ]</span>
     <p class="lede">시시각각 변화하는 AI영상 제작 시스템에 빠르게 적응합니다.</p>
     <div class="pair">
@@ -94,7 +92,7 @@
   </section>
 
   <!-- 06 ─ BUSINESS CATEGORY -->
-  <section class="sec pin" id="s06" data-slide="6" data-tone="light">
+  <section class="sec pin" id="s06" data-hold="0.25" data-ch="sp" data-slide="6" data-tone="light">
     <div class="pin-inner">
       <span class="stamp mono">[ 06 / 18 ]</span>
       <h2 class="sec-title">BUSINESS CATEGORY</h2>
@@ -113,65 +111,79 @@
     </div>
   </section>
 
+  <!-- 07~11 NEW MEDIA — 상단 고정 + 01~05가 아래로 흐른다 -->
+  <div class="stack-group" id="groupNM" data-ch="nm">
+    <div class="group-sticky">
+      <p class="group-title" aria-hidden="true">NEW MEDIA</p>
+      <ol class="group-steps mono" aria-label="NEW MEDIA 흐름">
+        <li data-for="s07"><a href="#s07" data-nav><b>01</b>FILM</a></li>
+        <li data-for="s08"><a href="#s08" data-nav><b>02</b>ASSET</a></li>
+        <li data-for="s09"><a href="#s09" data-nav><b>03</b>FEED</a></li>
+        <li data-for="s10"><a href="#s10" data-nav><b>04</b>MEDIA</a></li>
+        <li data-for="s11"><a href="#s11" data-nav><b>05</b>SYSTEM</a></li>
+      </ol>
+    </div>
   <!-- 07 ─ NEW MEDIA -->
-  <section class="sec" id="s07" data-slide="7" data-tone="light">
+  <section class="sec" id="s07" data-ch="nm" data-slide="7" data-tone="light">
     <span class="stamp mono">[ 07 / 18 ]</span>
     <h2 class="sec-title">NEW MEDIA</h2>
     <p class="lede">브랜드 세계관을 AI로 형상화 하고 광고 영상을 제작합니다.</p>
     <figure class="slot wide" data-slot="s07_film"></figure>
+    <button class="film-play mono" id="filmPlay" type="button" data-film="film"><span class="tri" aria-hidden="true"></span>PLAY FILM<span class="dim" data-len></span></button>
   </section>
 
   <!-- 08 -->
-  <section class="sec" id="s08" data-slide="8" data-tone="light">
+  <section class="sec" id="s08" data-ch="nm" data-slide="8" data-tone="light">
     <span class="stamp mono">[ 08 / 18 ]</span>
     <h2 class="sec-title">NEW MEDIA</h2>
     <p class="lede">세계관에 활용된 AI모델들로 브랜드 에셋을 제작하고</p>
     <div class="s08-grid">
-      <div class="phone" id="phone08"></div>
       <div class="gallery" id="gallery08"></div>
     </div>
+    <div class="personas" id="personas08"></div>
   </section>
 
   <!-- 09 -->
-  <section class="sec" id="s09" data-slide="9" data-tone="light">
-    <span class="stamp mono">[ 09 / 18 ]</span>
-    <h2 class="sec-title">NEW MEDIA</h2>
-    <p class="lede">AI모델들이 SNS 피드를 운영하며 브랜드를 이야기합니다.</p>
-    <div class="feeds" id="feeds09"></div>
+  <section class="sec pin pin-f" id="s09" data-hold="0.25" data-ch="nm" data-slide="9" data-tone="light">
+    <div class="pin-inner">
+      <span class="stamp mono">[ 09 / 18 ]</span>
+      <h2 class="sec-title">NEW MEDIA</h2>
+      <p class="lede">AI모델들이 SNS 피드를 운영하며 브랜드를 이야기합니다.</p>
+      <div class="feeds" id="feeds09"></div>
+    </div>
   </section>
 
   <!-- 10 -->
-  <section class="sec pin pin-l" id="s10" data-slide="10" data-tone="light">
+  <section class="sec pin pin-l" id="s10" data-hold="0.2" data-ch="nm" data-slide="10" data-tone="light">
     <div class="pin-inner">
       <span class="stamp mono">[ 10 / 18 ]</span>
       <h2 class="sec-title">NEW MEDIA</h2>
       <p class="lede">AI 모델들은 각자의 보이스를 통해 새로운 개념의 미디어로서 소통합니다.</p>
-      <div class="media-map" style="--q:1;--o:1">
-        <svg class="venn" viewBox="0 0 440 420" role="img" aria-label="Paid Media, Earned Media, Owned Media — 세 원이 겹치는 가운데가 Casted Media">
+      <div class="media-map" id="map10">
+        <svg class="venn" viewBox="-60 -40 560 510" role="img" aria-label="Paid Media, Earned Media, Owned Media — 세 원이 겹치는 가운데가 Casted Media">
           <defs>
-            <clipPath id="vennClipA"><circle class="cA" cx="220" cy="153" r="116"/></clipPath>
-            <clipPath id="vennClipB"><circle class="cB" cx="166.3" cy="246" r="116"/></clipPath>
+            <clipPath id="vennClipA"><circle class="cA" cx="220" cy="215" r="40"/></clipPath>
+            <clipPath id="vennClipB"><circle class="cB" cx="220" cy="215" r="40"/></clipPath>
           </defs>
-          <g class="overlap" clip-path="url(#vennClipA)"><g clip-path="url(#vennClipB)"><circle class="cC" cx="273.7" cy="246" r="116"/></g></g>
-          <circle class="ring cA" cx="220" cy="153" r="116"/>
-          <circle class="ring cB" cx="166.3" cy="246" r="116"/>
-          <circle class="ring cC" cx="273.7" cy="246" r="116"/>
-          <circle class="core" cx="220" cy="215" r="5"/>
-          <text class="tA" x="220" y="108">Paid Media</text>
-          <text class="tB" x="118" y="280">Earned Media</text>
-          <text class="tC" x="322" y="280">Owned Media</text>
+          <g class="overlap" clip-path="url(#vennClipA)"><g clip-path="url(#vennClipB)"><circle class="cC" cx="220" cy="215" r="40"/></g></g>
+          <circle class="ring cA" cx="220" cy="215" r="40"/>
+          <circle class="ring cB" cx="220" cy="215" r="40"/>
+          <circle class="ring cC" cx="220" cy="215" r="40"/>
+          <text class="tA" x="220" y="120">Paid Media</text>
+          <text class="tB" x="120" y="290">Earned Media</text>
+          <text class="tC" x="320" y="290">Owned Media</text>
         </svg>
-        <div class="map-link" aria-hidden="true"></div>
         <div class="casted">
           <p class="casted-title">Casted Media</p>
-          <p>브랜드가 설계한 페르소나가<br>개인으로서 발신</p>
+          <p class="casted-body">브랜드가 설계한 페르소나가<br>개인으로서 발신</p>
         </div>
       </div>
     </div>
   </section>
 
   <!-- 11 -->
-  <section class="sec" id="s11" data-slide="11" data-tone="light">
+  <section class="sec pin pin-xl" id="s11" data-ch="nm" data-slide="11" data-tone="light">
+    <div class="pin-inner">
     <span class="stamp mono">[ 11 / 18 ]</span>
     <h2 class="sec-title">NEW MEDIA</h2>
     <p class="lede">SNS 피드는 자동으로 운영되며 메신저 피드백을 통해 완성됩니다.</p>
@@ -190,10 +202,12 @@
       <span class="loop-arrow" aria-hidden="true">›</span>
       <p class="loop-out">분석한 Young Target 데이터를 토대로<br>어떤 주제, 포맷, 키워드가 반응 만드는지<br><em>각 페르소나 미디어 계정에 반영<br>타깃 최적화 및 콘텐츠 운영 체계 고도화</em></p>
     </div>
+    </div>
   </section>
+  </div>
 
   <!-- 12 ─ 챕터: 관점 -->
-  <section class="sec chapter tall xtall" id="s12" data-slide="12" data-tone="dark">
+  <section class="sec chapter tall xtall" id="s12" data-ch="pov" data-slide="12" data-tone="dark">
     <div class="sticky">
       <span class="stamp mono">[ 12 / 18 ]</span>
       <p class="giant" aria-hidden="true">POINT OF VIEW</p>
@@ -205,8 +219,18 @@
     </div>
   </section>
 
+  <!-- 13~15 OPOINT IP — 상단 고정 + 01~03이 아래로 흐른다 -->
+  <div class="stack-group dark" id="groupIP" data-ch="pov">
+    <div class="group-sticky">
+      <p class="group-title" aria-hidden="true">OPOINT IP</p>
+      <ol class="group-steps mono" aria-label="OPOINT IP 흐름">
+        <li data-for="s13"><a href="#s13" data-nav><b>01</b>EXPERIMENT</a></li>
+        <li data-for="s14"><a href="#s14" data-nav><b>02</b>CHANNEL</a></li>
+        <li data-for="s15"><a href="#s15" data-nav><b>03</b>POV</a></li>
+      </ol>
+    </div>
   <!-- 13 ─ OPOINT IP -->
-  <section class="sec" id="s13" data-slide="13" data-tone="dark">
+  <section class="sec" id="s13" data-ch="pov" data-slide="13" data-tone="dark">
     <span class="stamp mono">[ 13 / 18 ]</span>
     <h2 class="sec-title">OPOINT IP</h2>
     <p class="lede">우리는 ‘시작’을 먼저 ‘실험’합니다.</p>
@@ -214,23 +238,27 @@
   </section>
 
   <!-- 14 -->
-  <section class="sec" id="s14" data-slide="14" data-tone="dark">
+  <section class="sec" id="s14" data-ch="pov" data-slide="14" data-tone="dark">
     <span class="stamp mono">[ 14 / 18 ]</span>
     <h2 class="sec-title">OPOINT IP</h2>
     <p class="lede">최초의 AI 관측형 세계관 채널</p>
     <figure class="slot wide" data-slot="s14_trailer"></figure>
+    <div class="s14-actions">
+    <button class="film-play mono" type="button" data-film="trailer"><span class="tri" aria-hidden="true"></span>PLAY TRAILER<span class="dim" data-len></span></button>
+    </div>
   </section>
 
   <!-- 15 -->
-  <section class="sec" id="s15" data-slide="15" data-tone="dark">
+  <section class="sec" id="s15" data-ch="pov" data-slide="15" data-tone="dark">
     <span class="stamp mono">[ 15 / 18 ]</span>
     <h2 class="sec-title">OPOINT IP</h2>
     <p class="lede">세계관의 다중 POV 캐릭터들은 서로 같은 공간을 공유하고<br>매주 유저들과 관계형성을 합니다.</p>
     <figure class="slot wide" data-slot="s15_doc"></figure>
   </section>
+  </div>
 
   <!-- 16 ─ 챕터: 가능성 -->
-  <section class="sec chapter tall xtall" id="s16" data-slide="16" data-tone="light">
+  <section class="sec chapter tall xtall" id="s16" data-ch="ign" data-slide="16" data-tone="light">
     <div class="sticky">
       <span class="stamp mono">[ 16 / 18 ]</span>
       <p class="giant" aria-hidden="true">POINT OF IGNITION</p>
@@ -242,19 +270,24 @@
     </div>
   </section>
 
-  <!-- 17 ─ 유튜브 포폴 -->
-  <section class="sec" id="s17" data-slide="17" data-tone="light">
+  <!-- 17 ─ YOUTUBE (0917 상은님 요청: '유튜브 포폴' → 'YOUTUBE') -->
+  <section class="sec" id="s17" data-ch="ign" data-slide="17" data-tone="light">
     <span class="stamp mono">[ 17 / 18 ]</span>
-    <h2 class="sec-title">유튜브 포폴</h2>
-    <div class="feature" id="feature17"></div>
-    <ol class="index" data-works="youtube"></ol>
+    <h2 class="sec-title">YOUTUBE</h2>
+    <div class="clients mono" id="clients17" aria-label="클라이언트"></div>
+    <div class="works yt" id="works17"></div>
   </section>
 
-  <!-- 18 ─ 이미지&영상 포폴 -->
-  <section class="sec" id="s18" data-slide="18" data-tone="light">
+  <!-- 18 ─ VISUAL (0917 상은님 요청: '이미지&영상 포폴(브랜드명)' → 'VISUAL') -->
+  <section class="sec" id="s18" data-ch="ign" data-slide="18" data-tone="light">
     <span class="stamp mono">[ 18 / 18 ]</span>
-    <h2 class="sec-title">이미지&amp;영상 포폴(브랜드명)</h2>
-    <ol class="index" data-works="image"></ol>
+    <h2 class="sec-title">VISUAL</h2>
+    <div class="filters mono" id="filter18" role="tablist">
+      <button type="button" data-f="all" class="on">ALL</button>
+      <button type="button" data-f="video">VIDEO</button>
+      <button type="button" data-f="image">IMAGE</button>
+    </div>
+    <div id="works18"></div>
   </section>
 
   <footer class="sec foot" id="contact" data-slide="18" data-tone="dark">
@@ -270,8 +303,24 @@
   </footer>
 </main>
 
-<img class="hover-preview" id="hoverPreview" alt="" hidden>
+<dialog class="work-box" id="workBox" aria-labelledby="workTitle">
+  <div class="work-inner">
+    <div class="work-top mono"><span id="workMeta"></span><button type="button" id="workClose">CLOSE ✕</button></div>
+    <h3 id="workTitle"></h3>
+    <div class="work-copy" id="workCopy"></div>
+    <div class="work-gallery" id="workGallery"></div>
+  </div>
+</dialog>
 
+<dialog class="film-box" id="filmBox" aria-label="브랜드 필름">
+  <div class="film-inner">
+    <div class="film-top mono"><span id="filmTitle"></span><button type="button" id="filmClose">CLOSE ✕</button></div>
+    <video id="filmVideo" controls playsinline preload="none"></video>
+  </div>
+</dialog>
+
+<script src="js/portfolio-data.js"></script>
+<script src="js/overrides.js"></script>
 <script src="js/content.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
 <script type="module" src="js/main.js"></script>

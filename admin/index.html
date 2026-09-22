@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="ko"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>O.POINT 관리자</title>
+<style>
+:root{
+  --ground:#0a0a0b; --paper:#141416; --line:rgba(237,237,234,.16); --rule:rgba(237,237,234,.5);
+  --ink:#ededea; --ink2:#8a8a90; --ok:#41f729; --warn:#fa6120; --ac:#fee336;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--ground);color:var(--ink);font-family:"Pretendard","Apple SD Gothic Neo",system-ui,sans-serif;line-height:1.6;word-break:keep-all;padding:0 0 120px}
+.mono{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.dim{color:var(--ink2)}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:clamp(16px,4vw,40px)}
+header{position:sticky;top:0;z-index:20;background:rgba(10,10,11,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;gap:16px;justify-content:space-between;padding-block:14px}
+h1{font-size:18px;font-weight:600;letter-spacing:-.01em}
+h2{font-size:15px;font-weight:600;margin-bottom:4px}
+section{border-top:1px solid var(--rule);padding-block:26px 30px;display:grid;gap:14px}
+.sec-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+label{display:grid;gap:6px;font-size:13px;color:var(--ink2)}
+input,textarea,select{width:100%;background:var(--paper);border:1px solid var(--line);color:var(--ink);padding:9px 11px;font:inherit;font-size:14px;border-radius:2px}
+input:focus,textarea:focus{outline:2px solid var(--ac);outline-offset:-1px}
+button{background:transparent;border:1px solid var(--ink);color:var(--ink);padding:8px 14px;font:inherit;font-size:13px;cursor:pointer;border-radius:2px}
+button:hover{background:var(--ink);color:var(--ground)}
+button.primary{background:var(--ac);border-color:var(--ac);color:#0a0a0b;font-weight:600}
+button.primary:hover{filter:brightness(1.1)}
+button.ghost{border-color:var(--line);color:var(--ink2);padding:5px 10px}
+button.ghost:hover{background:var(--line);color:var(--ink)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.card{background:var(--paper);border:1px solid var(--line);padding:14px;display:grid;gap:10px}
+.pov-card{grid-template-columns:150px minmax(0,1fr);gap:14px}
+.pov-card .th{width:150px;aspect-ratio:16/9;object-fit:cover;background:#000;border:1px solid var(--line)}
+.pov-fields{display:grid;gap:8px}
+.pov-fields .two{display:grid;grid-template-columns:1fr 140px;gap:8px}
+.list{display:grid;gap:12px}
+.works{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+.work{display:flex;gap:10px;align-items:center;border:1px solid var(--line);padding:8px 10px;font-size:13px}
+.work input{width:auto;flex:0 0 auto}
+.work.off{opacity:.42;text-decoration:line-through}
+.bar{position:fixed;left:0;right:0;bottom:0;background:rgba(20,20,22,.96);border-top:1px solid var(--rule);padding:14px 0;z-index:30;backdrop-filter:blur(8px)}
+.bar .wrap{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.status{font-size:13px}
+.status.ok{color:var(--ok)}
+.status.err{color:var(--warn)}
+details{border:1px solid var(--line);padding:12px 14px;background:var(--paper)}
+summary{cursor:pointer;font-size:14px;font-weight:600}
+details .body{display:grid;gap:10px;margin-top:12px}
+code{font-family:ui-monospace,monospace;font-size:12.5px;color:var(--ac);word-break:break-all}
+.hint{font-size:12.5px;color:var(--ink2)}
+ol.steps{margin-left:18px;font-size:13.5px;color:var(--ink2);display:grid;gap:6px}
+@media (max-width:700px){ .pov-card{grid-template-columns:1fr} .pov-card .th{width:100%} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div>
+      <h1>O.POINT 관리자</h1>
+      <p class="mono dim" id="meta">로딩 중…</p>
+    </div>
+    <div class="row">
+      <a href="../" target="_blank" rel="noopener"><button type="button">사이트 보기 ↗</button></a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section>
+    <div class="sec-head"><h2>연락처</h2><span class="mono dim">헤더 CONTACT · 푸터</span></div>
+    <label>이메일 주소
+      <input id="email" type="email" placeholder="lyj@hahmshoutg.com">
+    </label>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>14장 트레일러 링크</h2><span class="mono dim">OPOINT IP · CHANNEL</span></div>
+    <label>유튜브 주소 (회사소개서 PDF의 PLAY TRAILER 와 같은 영상)
+      <input id="trailer" type="url" placeholder="https://www.youtube.com/watch?v=...">
+    </label>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>15장 POV 영상</h2>
+      <div class="row"><span class="mono dim" id="povCount"></span><button type="button" class="ghost" id="povAdd">+ 영상 추가</button></div>
+    </div>
+    <p class="hint">유튜브 주소를 붙여넣으면 영상 번호가 자동으로 들어갑니다. 썸네일은 사이트 안의 이미지 경로(assets/ip/pov/pov_01.webp)이거나 비워 두면 유튜브 기본 썸네일을 씁니다.</p>
+    <div class="list" id="povList"></div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>17·18장 포트폴리오 노출</h2>
+      <div class="row"><span class="mono dim" id="workCount"></span><button type="button" class="ghost" id="workAll">전체 켜기</button></div>
+    </div>
+    <p class="hint">체크를 끄면 사이트에서 그 작업이 보이지 않습니다. 원본 자료는 지워지지 않습니다.</p>
+    <h3 class="mono dim">YOUTUBE</h3>
+    <div class="works" id="worksYT"></div>
+    <h3 class="mono dim">VISUAL</h3>
+    <div class="works" id="worksIM"></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>저장 방법</h2><span class="mono dim">둘 중 하나</span></div>
+
+    <details open>
+      <summary>방법 1 — 깃허브에 바로 저장 (사이트가 1~2분 뒤 자동 반영)</summary>
+      <div class="body">
+        <p class="hint">깃허브에서 발급한 토큰을 한 번만 입력해 두면, 이후에는 저장 버튼만 누르면 됩니다. 토큰은 이 브라우저에만 저장되고 서버로 보내지 않습니다.</p>
+        <label>저장소 (소유자/저장소 이름)
+          <input id="repo" placeholder="sangeun1000/opoint-preview-5a26d2">
+        </label>
+        <label>파일 경로 <input id="path" value="js/overrides.js"></label>
+        <label>토큰 (Fine-grained personal access token · Contents 쓰기 권한)
+          <input id="token" type="password" placeholder="github_pat_...">
+        </label>
+        <div class="row">
+          <button type="button" id="saveGh" class="primary">깃허브에 저장</button>
+          <button type="button" id="forget" class="ghost">토큰 지우기</button>
+        </div>
+        <ol class="steps">
+          <li>깃허브 → Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token</li>
+          <li>Repository access 에서 위 저장소만 선택 · Permissions → Repository permissions → Contents 를 Read and write 로</li>
+          <li>만들어진 토큰을 위 칸에 붙여넣기 (한 번만)</li>
+        </ol>
+      </div>
+    </details>
+
+    <details>
+      <summary>방법 2 — 파일로 내려받아 직접 올리기</summary>
+      <div class="body">
+        <p class="hint">내려받은 <code>overrides.js</code> 를 원드라이브 <code>01_site/src/js/</code> 에 덮어쓴 뒤, <code>깃허브_배포.command</code> 를 실행하면 반영됩니다.</p>
+        <div class="row">
+          <button type="button" id="download">overrides.js 내려받기</button>
+          <button type="button" id="copy" class="ghost">내용 복사</button>
+        </div>
+      </div>
+    </details>
+  </section>
+
+</main>
+
+<div class="bar">
+  <div class="wrap">
+    <p class="status dim" id="status">변경 사항 없음</p>
+    <div class="row">
+      <button type="button" id="reset" class="ghost">처음 값으로 되돌리기</button>
+      <button type="button" id="saveGh2" class="primary">저장</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/portfolio-data.js"></script>
+<script src="../js/overrides.js"></script>
+<script src="../js/content.js"></script>
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const C = window.OPOINT;
+  const OV = window.OPOINT_OVERRIDES || {};
+  const esc = (t = '') => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const ytId = (u = '') => (u.match(/(?:youtu\.be\/|v=|shorts\/|embed\/)([\w-]{11})/) || [])[1] || '';
+  const key = (w) => `${w.client || ''}｜${w.name || ''}`;
+  let dirty = false;
+
+  // ── 현재 값 불러오기 ──────────────────────────────
+  const state = {
+    email: C.contact.email || '',
+    trailer: (C.trailer && C.trailer.watch) || '',
+    pov: JSON.parse(JSON.stringify(C.slots.s15_doc.videos || [])),
+    hidden: new Set(OV.hidden || []),
+  };
+  const start = JSON.stringify({ ...state, hidden: [...state.hidden] });
+
+  // 감춘 항목까지 보여 주려면 원본 데이터에서 목록을 다시 만든다
+  const D = window.OPOINT_DATA || { cases: [], brands: [] };
+  const allWorks = {
+    yt: C.works.youtube.map((w) => ({ client: w.client, name: w.name })),
+    im: C.works.image.map((w) => ({ client: w.client, name: w.name })),
+  };
+  (OV.hidden || []).forEach((k) => {
+    const [client, name] = k.split('｜');
+    const box = D.cases.some((c) => (c.title === name || c.client === client) && c.slide <= 15) ? allWorks.yt : allWorks.im;
+    if (!box.some((w) => key(w) === k)) box.push({ client, name });
+  });
+
+  $('#meta').textContent = `POV ${state.pov.length}편 · 작업 ${allWorks.yt.length + allWorks.im.length}건${OV.updatedAt ? ' · 마지막 저장 ' + OV.updatedAt : ''}`;
+  $('#email').value = state.email;
+  $('#trailer').value = state.trailer;
+
+  const mark = (msg = '저장하지 않은 변경 있음', cls = '') => {
+    dirty = JSON.stringify({ ...state, hidden: [...state.hidden] }) !== start;
+    const s = $('#status');
+    s.textContent = dirty ? msg : '변경 사항 없음';
+    s.className = 'status ' + (cls || (dirty ? 'err' : 'dim'));
+  };
+
+  // ── 15장 POV ─────────────────────────────────────
+  function renderPov() {
+    $('#povCount').textContent = `${state.pov.length} VIDEOS`;
+    $('#povList').innerHTML = state.pov.map((v, i) => `
+      <div class="card pov-card" data-i="${i}">
+        <img class="th" src="${esc(v.thumb || (v.id ? `https://i.ytimg.com/vi/${v.id}/hqdefault.jpg` : ''))}" alt="" onerror="this.style.visibility='hidden'">
+        <div class="pov-fields">
+          <label>제목<input data-f="title" value="${esc(v.title || '')}"></label>
+          <div class="two">
+            <label>유튜브 주소<input data-f="url" value="${v.id ? 'https://youtu.be/' + esc(v.id) : ''}"></label>
+            <label>길이<input data-f="dur" value="${esc(v.dur || '')}" placeholder="2:10"></label>
+          </div>
+          <label>썸네일 경로<input data-f="thumb" value="${esc(v.thumb || '')}" placeholder="assets/ip/pov/pov_01.webp"></label>
+          <div class="row">
+            <span class="mono dim">POV ${String(i + 1).padStart(2, '0')}</span>
+            <button type="button" class="ghost" data-act="up">↑ 앞으로</button>
+            <button type="button" class="ghost" data-act="down">↓ 뒤로</button>
+            <button type="button" class="ghost" data-act="del">삭제</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+  $('#povList').addEventListener('input', (e) => {
+    const card = e.target.closest('[data-i]'); if (!card) return;
+    const v = state.pov[+card.dataset.i], f = e.target.dataset.f;
+    if (f === 'url') v.id = ytId(e.target.value) || e.target.value.trim();
+    else v[f] = e.target.value;
+    if (f === 'thumb' || f === 'url') card.querySelector('.th').src = v.thumb || (v.id ? `https://i.ytimg.com/vi/${v.id}/hqdefault.jpg` : '');
+    mark();
+  });
+  $('#povList').addEventListener('click', (e) => {
+    const act = e.target.dataset.act; if (!act) return;
+    const i = +e.target.closest('[data-i]').dataset.i;
+    if (act === 'del') { if (!confirm('이 영상을 목록에서 뺄까요?')) return; state.pov.splice(i, 1); }
+    if (act === 'up' && i > 0) state.pov.splice(i - 1, 0, state.pov.splice(i, 1)[0]);
+    if (act === 'down' && i < state.pov.length - 1) state.pov.splice(i + 1, 0, state.pov.splice(i, 1)[0]);
+    renderPov(); mark();
+  });
+  $('#povAdd').addEventListener('click', () => { state.pov.push({ id: '', title: '', dur: '', thumb: '' }); renderPov(); mark(); });
+
+  // ── 17·18장 노출 ──────────────────────────────────
+  function renderWorks() {
+    const box = (list, el) => {
+      document.querySelector(el).innerHTML = list.map((w) => {
+        const k = key(w), on = !state.hidden.has(k);
+        return `<label class="work ${on ? '' : 'off'}"><input type="checkbox" data-k="${esc(k)}" ${on ? 'checked' : ''}><span>${esc(w.name || w.client)}</span></label>`;
+      }).join('');
+    };
+    box(allWorks.yt, '#worksYT'); box(allWorks.im, '#worksIM');
+    $('#workCount').textContent = `${allWorks.yt.length + allWorks.im.length - state.hidden.size} / ${allWorks.yt.length + allWorks.im.length} 노출`;
+  }
+  document.addEventListener('change', (e) => {
+    const k = e.target.dataset.k; if (!k) return;
+    e.target.checked ? state.hidden.delete(k) : state.hidden.add(k);
+    e.target.closest('.work').classList.toggle('off', !e.target.checked);
+    $('#workCount').textContent = `${allWorks.yt.length + allWorks.im.length - state.hidden.size} / ${allWorks.yt.length + allWorks.im.length} 노출`;
+    mark();
+  });
+  $('#workAll').addEventListener('click', () => { state.hidden.clear(); renderWorks(); mark(); });
+
+  $('#email').addEventListener('input', (e) => { state.email = e.target.value.trim(); mark(); });
+  $('#trailer').addEventListener('input', (e) => { state.trailer = e.target.value.trim(); mark(); });
+
+  // ── 저장 파일 만들기 ──────────────────────────────
+  const build = () => {
+    const now = new Date().toISOString().slice(0, 16).replace('T', ' ');
+    const data = {
+      contact: { email: state.email },
+      trailer: { watch: state.trailer },
+      pov: state.pov.filter((v) => v.id),
+      hidden: [...state.hidden],
+      updatedAt: now,
+    };
+    return `/* 관리자 페이지(/admin/)가 저장한 파일 — 직접 고치지 않아도 됩니다. */\nwindow.OPOINT_OVERRIDES = ${JSON.stringify(data, null, 2)};\n`;
+  };
+
+  $('#download').addEventListener('click', () => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([build()], { type: 'text/javascript' }));
+    a.download = 'overrides.js'; a.click(); URL.revokeObjectURL(a.href);
+    $('#status').textContent = '내려받았습니다 — 01_site/src/js/ 에 덮어쓰고 배포하세요'; $('#status').className = 'status ok';
+  });
+  $('#copy').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(build()); $('#status').textContent = '복사했습니다'; $('#status').className = 'status ok'; }
+    catch { alert(build()); }
+  });
+
+  // ── 깃허브 저장 ──────────────────────────────────
+  const LS = 'opoint-admin';
+  const saved = JSON.parse(localStorage.getItem(LS) || '{}');
+  $('#repo').value = saved.repo || 'sangeun1000/opoint-preview-5a26d2';
+  $('#path').value = saved.path || 'js/overrides.js';
+  $('#token').value = saved.token || '';
+
+  async function saveGithub() {
+    const repo = $('#repo').value.trim(), path = $('#path').value.trim(), token = $('#token').value.trim();
+    const st = $('#status');
+    if (!repo || !path || !token) { st.textContent = '저장소·경로·토큰을 먼저 채워 주세요'; st.className = 'status err'; $('details').open = true; return; }
+    localStorage.setItem(LS, JSON.stringify({ repo, path, token }));
+    st.textContent = '저장 중…'; st.className = 'status dim';
+    const api = `https://api.github.com/repos/${repo}/contents/${path}`;
+    const h = { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' };
+    try {
+      let sha = '';
+      const cur = await fetch(api, { headers: h });
+      if (cur.ok) sha = (await cur.json()).sha;
+      else if (cur.status !== 404) throw new Error(`불러오기 실패 (${cur.status})`);
+      const body = {
+        message: `관리자 페이지에서 내용 수정 ${new Date().toISOString().slice(0, 10)}`,
+        content: btoa(String.fromCharCode(...new TextEncoder().encode(build()))),
+        ...(sha ? { sha } : {}),
+      };
+      const res = await fetch(api, { method: 'PUT', headers: h, body: JSON.stringify(body) });
+      if (!res.ok) throw new Error(`저장 실패 (${res.status}) — 토큰 권한을 확인해 주세요`);
+      st.textContent = '저장했습니다 — 사이트에 1~2분 뒤 반영됩니다'; st.className = 'status ok';
+      dirty = false;
+    } catch (err) {
+      st.textContent = err.message; st.className = 'status err';
+    }
+  }
+  $('#saveGh').addEventListener('click', saveGithub);
+  $('#saveGh2').addEventListener('click', saveGithub);
+  $('#forget').addEventListener('click', () => { localStorage.removeItem(LS); $('#token').value = ''; $('#status').textContent = '토큰을 지웠습니다'; $('#status').className = 'status dim'; });
+  $('#reset').addEventListener('click', () => { if (confirm('이 화면의 변경을 모두 취소할까요?')) location.reload(); });
+  addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+  renderPov(); renderWorks(); mark();
+})();
+</script>
+</body></html>

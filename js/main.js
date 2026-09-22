@@ -6,6 +6,7 @@ import { ringHullTextures, dotHullTextures, haloTexture } from './hull-texture.j
 import { Drums } from './drum.js';
 import { buildGallery, updateGalleries } from './galleries.js';
 
+const GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789✺';
 const C = window.OPOINT || { slots: {}, works: { youtube: [], image: [] } };
 const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const FINE = matchMedia('(pointer: fine)').matches;
@@ -32,12 +33,46 @@ $$('[data-slot]').forEach((fig) => fillSlot(fig, C.slots[fig.dataset.slot]));
 
 // 08
 if (C.assets08) {
-  $('#phone08').innerHTML = `<div class="screen"><img src="${esc(C.assets08.phoneScreen)}" alt="AI 모델 브랜드 에셋" loading="lazy"></div>
-    <img class="frame" src="${esc(C.assets08.phone)}" alt="">`;
   $('#gallery08').innerHTML = C.assets08.gallery.map((s) => `<img src="${esc(s)}" alt="" loading="lazy">`).join('');
+  const ps = C.assets08.personas || [];
+  if (ps.length) {
+    $('#personas08').innerHTML = `<div class="ps-head mono"><span>AI MODEL × ${String(ps.length).padStart(2, '0')}</span><span class="dim">LIFESTYLE CUTS</span></div>
+      <div class="ps-rows">${ps.map((p, i) => `<div class="ps-row" style="--dir:${i % 2 ? -1 : 1}">
+        <p class="ps-name mono"><b>${String(i + 1).padStart(2, '0')}</b>${esc(p.name)}</p>
+        <div class="ps-view"><div class="ps-track">${p.images.concat(p.images).map((s) => `<img src="${esc(s)}" alt="" loading="lazy">`).join('')}</div></div>
+      </div>`).join('')}</div>`;
+  }
 }
 // 09
-if (C.feeds09) $('#feeds09').innerHTML = C.feeds09.map((s) => `<img src="${esc(s)}" alt="페르소나 인스타그램 피드" loading="lazy">`).join('');
+if (C.feeds09) {
+  $('#feeds09').innerHTML = C.feeds09.map((s, i) => `<figure style="--i:${i}"><img src="${esc(s)}" alt="페르소나 인스타그램 피드" loading="lazy">${C.feedNames09 && C.feedNames09[i] ? `<figcaption class="mono dim">${String(i + 1).padStart(2, '0')} — ${esc(C.feedNames09[i])}</figcaption>` : ''}</figure>`).join('');
+}
+
+// 07 브랜드 필름 · 14 트레일러 — 전체 재생(소리 포함)
+const filmBox = $('#filmBox');
+const filmVideo = $('#filmVideo');
+const fmt = (d) => `${String((d / 60) | 0).padStart(2, '0')}:${String(Math.round(d) % 60).padStart(2, '0')}`;
+$$('[data-film]').forEach((btn) => {
+  const f = C[btn.dataset.film];
+  if (!f || !filmBox) { btn.hidden = true; return; }
+  btn.addEventListener('click', () => {
+    $('#filmTitle').textContent = f.title || '';
+    if (filmVideo.dataset.src !== f.src) { filmVideo.src = f.src; filmVideo.poster = f.poster || ''; filmVideo.dataset.src = f.src; }
+    filmBox.showModal ? filmBox.showModal() : filmBox.setAttribute('open', '');
+    lenisRef()?.stop();
+    filmVideo.play().catch(() => {});
+  });
+  const probe = document.createElement('video');
+  probe.preload = 'metadata';
+  probe.src = f.src;
+  probe.addEventListener('loadedmetadata', () => { const l = $('[data-len]', btn); if (l) l.textContent = fmt(probe.duration); });
+});
+if (filmBox) {
+  filmBox.addEventListener('close', () => { filmVideo.pause(); lenisRef()?.start(); });
+  $('#filmClose').addEventListener('click', () => filmBox.close());
+  filmBox.addEventListener('click', (e) => { if (e.target === filmBox) filmBox.close(); });
+}
+function lenisRef() { return window.__opointScroll; }
 
 // 연락처
 if (C.contact && (C.contact.email || C.contact.phone)) {
@@ -46,58 +81,196 @@ if (C.contact && (C.contact.email || C.contact.phone)) {
   $('#contactInfo').innerHTML = [c.email && `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`, esc(c.phone), esc(c.address)].filter(Boolean).join('&nbsp;&nbsp;·&nbsp;&nbsp;');
 }
 
-// 17·18 인덱스
-const preview = $('#hoverPreview');
-function renderIndex(list, key) {
-  const ol = $(`[data-works="${key}"]`);
-  if (!ol) return;
-  ol.innerHTML = (C.works[key] || []).map((w, i) => {
-    const n = String(i + 1).padStart(3, '0');
-    const inner = `<span class="n">[ ${n} ]</span><span class="yr">C. ${esc(w.year)}</span>
-      <span class="name">${esc(w.name)}</span>
-      <span class="tags">${(w.tags || []).map((t) => `<i>${esc(t)}</i>`).join('')}</span>
-      <span class="status ${w.sample ? 'sample' : ''}">${w.sample ? 'SAMPLE' : esc(w.status)}</span>
-      <span class="go" aria-hidden="true">${w.link ? '↗' : '→'}</span>`;
-    return w.link
-      ? `<li data-i="${i}"><a href="${esc(w.link)}" target="_blank" rel="noopener">${inner}</a></li>`
-      : `<li data-i="${i}"><div role="button" tabindex="0">${inner}</div></li>`;
-  }).join('');
+// 17·18 포트폴리오 — Trionn 식 작업 그리드 + 상세 창
+const ytId = (u = '') => (u.match(/(?:youtu\.be\/|v=|shorts\/)([\w-]{11})/) || [])[1] || '';
+function uniqLinks(list = []) {
+  const seen = new Set();
+  return list.filter((u) => { const k = ytId(u) || u.split('?')[0]; if (seen.has(k)) return false; seen.add(k); return true; });
+}
+const linkLabel = (u) => (/playlist/.test(u) ? 'PLAYLIST' : /instagram/.test(u) ? 'INSTAGRAM' : /shorts/.test(u) ? 'SHORTS' : 'YOUTUBE');
+const pad2 = (n, k = 2) => String(n).padStart(k, '0');
+const WORKS = (C.works && C.works) || { youtube: [], image: [] };
+const YTW = WORKS.youtube || [];
+const VIDW = (WORKS.image || []).filter((w) => w.kind === 'video');
+const IMGW = (WORKS.image || []).filter((w) => w.kind === 'image');
 
-  $$('li', ol).forEach((li) => {
-    const w = C.works[key][+li.dataset.i];
-    const row = li.firstElementChild;
-    if (FINE && w.cover) {
-      row.addEventListener('pointerenter', () => { preview.src = w.cover; preview.hidden = false; });
-      row.addEventListener('pointerleave', () => { preview.hidden = true; });
-    }
-    if (key === 'youtube') {
-      const pick = () => renderFeature(+li.dataset.i);
-      row.addEventListener('click', pick);
-      row.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
-    }
+// 17 상단: 숫자로 보는 포트폴리오(자료에서 센 값) · 클라이언트 흐름
+const cutCount = IMGW.reduce((n, w) => n + (w.clips || []).length, 0);
+// const stats = [[YTW.length, 'YOUTUBE SERIES · CHANNEL'], [VIDW.length, 'VIDEO CAMPAIGNS'], [IMGW.length, 'IMAGE BRANDS'], [cutCount, 'KEY VISUAL CUTS']];
+// 0917 v4: 숫자 요약 삭제(상은님 요청)
+const clients = [...new Set([...YTW, ...VIDW, ...IMGW].map((w) => (w.client || '').replace(/\(.*?\)/g, '').trim()).filter(Boolean)
+  .map((c) => c.replace(/^ibk/i, 'IBK')))];
+$('#clients17').innerHTML = `<div class="cl-track">${clients.concat(clients).map((c) => `<span>${esc(c)}</span>`).join('<i>✺</i>')}</div>`;
+
+function cardHTML(w, i, group, ratio) {
+  const imgs = (w.clips || []).slice(0, 4);
+  const meta = [w.format, w.year && `C. ${w.year}`, w.kind === 'image' && `${pad2((w.clips || []).length)} CUTS`].filter(Boolean);
+  return `<article class="work" data-group="${group}" data-i="${i}" tabindex="0" role="button" aria-label="${esc(w.client)} ${esc(w.name)} 자세히 보기">
+    <div class="work-media" style="aspect-ratio:${ratio}">${imgs.map((c, k) => `<img src="${esc(c.src)}" alt="" loading="lazy" class="${k ? '' : 'on'}">`).join('')}
+      <span class="work-no mono">(${pad2(i + 1)})</span><span class="work-open mono">VIEW +</span></div>
+    <div class="work-cap">
+      ${w.client && w.client !== w.name ? `<p class="mono dim">${esc(w.client)}</p>` : ''}
+      <h3>${esc(w.name)}</h3>
+      <p class="work-tags">${(w.tags || []).map((t) => `<i>${esc(t)}</i>`).join('')}</p>
+      ${meta.length ? `<p class="mono dim work-meta">${meta.map(esc).join('&nbsp;&nbsp;·&nbsp;&nbsp;')}</p>` : ''}
+    </div>
+  </article>`;
+}
+function groupHTML(label, list, group, ratio, cols) {
+  return `<div class="work-group" data-kind="${group}">
+    <div class="group-head mono"><span>${label}</span><span class="dim">${pad2(list.length)}</span></div>
+    <div class="works" style="--cols:${cols}">${list.map((w, i) => cardHTML(w, i, group, ratio)).join('')}</div>
+  </div>`;
+}
+$('#works17').outerHTML = `<div class="works-wrap" id="works17">${groupHTML('YOUTUBE ORIGINAL SERIES · CHANNEL', YTW, 'yt', '16 / 9', 3)}</div>`;
+$('#works18').innerHTML = groupHTML('VIDEO', VIDW, 'video', '16 / 9', 2) + groupHTML('IMAGE', IMGW, 'image', '4 / 5', 3);
+const LISTS = { yt: YTW, video: VIDW, image: IMGW };
+
+// 카드 위에 머물면 대표 컷이 차례로 바뀐다
+$$('.work').forEach((card) => {
+  const ims = $$('.work-media img', card);
+  if (ims.length < 2 || REDUCE) return;
+  let k = 0, t = null;
+  const step = () => { ims[k].classList.remove('on'); k = (k + 1) % ims.length; ims[k].classList.add('on'); };
+  card.addEventListener('pointerenter', () => { step(); t = setInterval(step, 900); });
+  card.addEventListener('pointerleave', () => { clearInterval(t); });
+});
+
+// 상세 창
+const workBox = $('#workBox');
+function openWork(group, i) {
+  const w = LISTS[group][i];
+  if (!w) return;
+  const links = uniqLinks(w.links);
+  const [l1 = '', l2 = ''] = w.lines || [];
+  $('#workMeta').textContent = [group === 'yt' ? '17 / 18' : '18 / 18', w.client, w.format].filter(Boolean).join('  ·  ');
+  $('#workTitle').textContent = w.name;
+  $('#workCopy').innerHTML = `
+    ${l1 ? `<div><b class="mono">제작 내용</b><p>${esc(l1)}</p></div>` : ''}
+    ${l2 ? `<div><b class="mono">제작 성과</b><p>${esc(l2)}</p></div>` : ''}
+    ${[['기간', w.period], ['산출물 수', w.outputs], ['투입 인원', w.crew]].filter(([, v]) => v).map(([k, v]) => `<div><b class="mono">${k}</b><p>${esc(v)}</p></div>`).join('')}
+    ${links.length ? `<div><b class="mono">영상 보기</b><p class="links mono">${links.map((u, k) => `<a href="${esc(u)}" target="_blank" rel="noopener">${linkLabel(u)} ${pad2(k + 1)} ↗</a>`).join('')}</p></div>` : ''}`;
+  $('#workGallery').className = `work-gallery ${group === 'image' ? 'tall' : ''}`;
+  $('#workGallery').innerHTML = (w.clips || []).map((c) => {
+    const im = `<img src="${esc(c.src)}" alt="" loading="lazy" style="aspect-ratio:${c.w} / ${c.h}">`;
+    return c.link ? `<a href="${esc(c.link)}" target="_blank" rel="noopener" class="is-link">${im}<span class="mono">▶ PLAY</span></a>` : `<span>${im}</span>`;
+  }).join('');
+  workBox.showModal ? workBox.showModal() : workBox.setAttribute('open', '');
+  workBox.querySelector('.work-inner').scrollTop = 0;
+  lenisRef()?.stop();
+}
+workBox.addEventListener('close', () => lenisRef()?.start());
+$('#workClose').addEventListener('click', () => workBox.close());
+workBox.addEventListener('click', (e) => { if (e.target === workBox) workBox.close(); });
+document.addEventListener('click', (e) => {
+  const card = e.target.closest('.work');
+  if (card) openWork(card.dataset.group, +card.dataset.i);
+});
+document.addEventListener('keydown', (e) => {
+  const card = e.target.closest && e.target.closest('.work');
+  if (card && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openWork(card.dataset.group, +card.dataset.i); }
+});
+
+// 18 — 영상/이미지 필터
+$$('#filter18 button').forEach((b) => b.addEventListener('click', () => {
+  $$('#filter18 button').forEach((x) => x.classList.toggle('on', x === b));
+  const f = b.dataset.f;
+  $$('#works18 .work-group').forEach((g) => { g.hidden = f !== 'all' && g.dataset.kind !== f; });
+}));
+
+/* ════════════════════ 1-b. 스토리 구조 — 챕터 레일 · NEW MEDIA 단계 · 등장 ════════════════════ */
+
+// 소개서 챕터(메뉴와 같은 이름) — 장 번호 범위만 정의, 문구는 기존 영문 챕터명만 쓴다
+const CHAPTERS = [
+  { name: 'START POINT', from: 3, to: 6, href: '#s03' },
+  { name: 'NEW MEDIA', from: 7, to: 11, href: '#s07' },
+  { name: 'POINT OF VIEW', from: 12, to: 15, href: '#s12' },
+  { name: 'POINT OF IGNITION', from: 16, to: 18, href: '#s16' },
+];
+const chapterOf = (n) => CHAPTERS.findIndex((c) => n >= c.from && n <= c.to);
+// 헤더 챕터 메뉴에 장 눈금을 붙인다
+$$('.hdr-nav a').forEach((a) => {
+  const k = CHAPTERS.findIndex((c) => c.href === a.getAttribute('href'));
+  if (k < 0) return;
+  const c = CHAPTERS[k];
+  a.dataset.ch = k;
+  a.insertAdjacentHTML('beforeend', `<span class="st-ticks" aria-hidden="true">${Array.from({ length: c.to - c.from + 1 }, (_, j) => `<i data-t="${c.from + j}"></i>`).join('')}</span>`);
+});
+
+// 챕터 표지: 몇 번째 챕터인지와 담긴 장 범위
+$$('.chapter').forEach((sec) => {
+  const k = chapterOf(+sec.dataset.slide);
+  if (k < 0) return;
+  const c = CHAPTERS[k];
+  const tag = document.createElement('p');
+  tag.className = 'mono chapter-tag';
+  tag.innerHTML = `CHAPTER ${String(k + 1).padStart(2, '0')} / ${String(CHAPTERS.length).padStart(2, '0')}<span class="dim">${String(c.from).padStart(2, '0')} — ${String(c.to).padStart(2, '0')}</span>`;
+  $('.stamp', sec)?.after(tag);
+});
+// 섹션 머리 막대 — (장 번호) · 소속 챕터 · 진행 — 섹션마다 같은 자리에서 구분선 역할
+$$('.sec:not(.foot) .stamp').forEach((st) => {
+  const sec = st.closest('[data-slide]');
+  const n = +sec.dataset.slide;
+  const k = chapterOf(n);
+  st.className = 'sec-meta mono';
+  st.innerHTML = `<span>(${pad2(n)})</span><span>${k >= 0 ? CHAPTERS[k].name : 'O.POINT'}</span><span class="dim">${pad2(n)} / 18</span>`;
+});
+
+// 상단 고정 묶음(NEW MEDIA · OPOINT IP): 고정 머리 높이를 아래 고정 요소들이 비켜 가도록 넘긴다
+const groups = $$('.stack-group');
+function syncGroupH() {
+  groups.forEach((g) => {
+    const h = $('.group-sticky', g).offsetHeight;
+    g.style.setProperty('--gs-h', `${h}px`);
   });
 }
-function renderFeature(i = 0) {
-  const w = (C.works.youtube || [])[i];
-  const box = $('#feature17');
-  if (!w || !box) return;
-  box.innerHTML = `<figure class="slot"></figure>
-    <div class="feature-bar mono"><span>${esc(w.period)}</span><span>${esc(w.outputs)}</span><span>${esc(w.crew)}</span></div>
-    <div class="feature-cards">${(w.results || []).map((r) => `<div><b>${esc(r.title)}</b><p>${esc(r.body)}</p></div>`).join('')}</div>`;
-  fillSlot($('.slot', box), { tag: '이미지', spec: '결과물 대표 비주얼', ratio: '21 / 9', mode: 'reveal', images: w.images || [] });
-  $$('[data-works="youtube"] li').forEach((li) => li.classList.toggle('on', +li.dataset.i === i));
-}
-renderIndex(C.works.youtube, 'youtube');
-renderIndex(C.works.image, 'image');
-renderFeature(0);
+syncGroupH();
+addEventListener('resize', syncGroupH);
 
-addEventListener('pointermove', (e) => {
-  if (!preview.hidden) preview.style.transform = `translate(${e.clientX + 150}px, ${e.clientY}px) translate(-50%, -50%)`;
-}, { passive: true });
+// 04 — OPOINT → VISUAL STUDIO 글자 변형(스크롤로 한 글자씩)
+const morphWord = $('#morphWord');
+const M_FROM = 'OPOINT', M_TO = 'VISUAL STUDIO';
+let lastMorph = '';
+function renderMorph(p) {
+  const len = Math.max(M_FROM.length, M_TO.length);
+  let html = '';
+  for (let i = 0; i < len; i++) {
+    const t0 = 0.12 + 0.5 * (i / len);
+    const a = M_FROM[i] || '', b = M_TO[i] || '';
+    let ch, cls = '';
+    if (p >= t0 + 0.07) { ch = b; cls = 'to'; }
+    else if (p >= t0) { ch = b === ' ' ? ' ' : GLYPHS[(i * 7 + Math.floor(p * 90)) % GLYPHS.length]; cls = 'mid'; }
+    else ch = a;
+    html += ch === ' ' ? '<i class="sp"> </i>' : ch ? `<i class="${cls}">${ch}</i>` : '';
+  }
+  if (html !== lastMorph) { morphWord.innerHTML = html; lastMorph = html; }
+  morphWord.style.setProperty('--m', p.toFixed(3));
+}
+
+// 등장 — 제목·문장·블록이 화면에 들어올 때 차례로
+const REV = '.sec-title, .lede, .statement-text, .nm-steps, .cats, .s04-grid, .pair, .s08-grid, .personas, .feeds, .filters, .film-play, .stats, .clients, .work-group';
+const pendingRv = REDUCE ? [] : $$(REV);
+pendingRv.forEach((el) => el.classList.add('rv'));
+const feedFigs = [...document.querySelectorAll('#feeds09 figure')];
+const feedsEl = document.getElementById('feeds09');
+function syncFeeds() {       // v7: 09장 휴대폰이 스크롤에 맞춰 한 대씩
+  if (!feedsEl) return;
+  const p = progressOf(document.getElementById('s09'));     // 고정 구간 동안 0→1
+  feedFigs.forEach((f, i) => f.classList.toggle('on', REDUCE || p > 0.04 + i * 0.15));
+}
+function syncReveal() {
+  for (let i = pendingRv.length - 1; i >= 0; i--) {
+    const el = pendingRv[i];
+    const r = el.getBoundingClientRect();
+    if (r.top < innerHeight * 0.92 && r.bottom > -innerHeight * 0.5) { el.classList.add('in'); pendingRv.splice(i, 1); }
+    else if (r.bottom <= -innerHeight * 0.5) { el.classList.add('in'); pendingRv.splice(i, 1); }   // 건너뛴 구간은 바로 표시
+  }
+}
+
 
 /* ════════════════════ 2. 타이포 인터랙션 ════════════════════ */
 
-const GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789✺';
+
 function scramble(el, to, dur = 520) {
   if (REDUCE) { el.textContent = to; return; }
   const from = el.textContent;
@@ -122,25 +295,23 @@ $$('[data-scramble]').forEach((a) => {
   const label = a.textContent;
   a.addEventListener('pointerenter', () => scramble(a, label, 420));
 });
-const morph = $('#morph');
-if (morph) {
-  const words = ['OPOINT', 'VISUAL STUDIO'];
-  let k = 0;
-  if (REDUCE) morph.textContent = 'OPOINT → VISUAL STUDIO';
-  else setInterval(() => { k = (k + 1) % words.length; scramble(morph, words[k], 900); }, 2600);
-}
 
 /* ════════════════════ 3. 스크롤 (Lenis) ════════════════════ */
 
 const lenis = !REDUCE && window.Lenis ? new window.Lenis({ lerp: 0.09, wheelMultiplier: 0.9 }) : null;
 window.__opointScroll = lenis;          // 점검용 핸들
-$$('[data-nav]').forEach((a) => a.addEventListener('click', (e) => {
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('[data-nav]');
+  if (!a) return;
   const target = $(a.getAttribute('href'));
   if (!target) return;
   e.preventDefault();
-  if (lenis) lenis.scrollTo(target, { duration: 1.6 });
-  else target.scrollIntoView({ behavior: REDUCE ? 'auto' : 'smooth' });
-}));
+  // 고정 묶음 안의 섹션은 고정 머리 높이만큼 비켜서 멈춘다
+  const grp = target.closest('.stack-group');
+  const offset = grp && target !== grp.querySelector('.sec') ? -(grp.querySelector('.group-sticky').offsetHeight) + 1 : 0;
+  if (lenis) lenis.scrollTo(target, { duration: 1.6, offset });
+  else scrollTo({ top: target.getBoundingClientRect().top + scrollY + offset, behavior: REDUCE ? 'auto' : 'smooth' });
+});
 
 const hdr = $('#hdr');
 const counter = $('#counter');
@@ -158,8 +329,24 @@ function syncChrome() {
   const dark = cur.dataset.tone === 'dark';
   document.body.classList.toggle('is-dark', dark);
   hdr.dataset.tone = dark ? 'dark' : 'light';
-  const chapter = +cur.dataset.slide >= 16 ? '#s16' : +cur.dataset.slide >= 12 ? '#s12' : +cur.dataset.slide >= 7 ? '#s07' : +cur.dataset.slide >= 3 ? '#s03' : '';
-  navLinks.forEach((a) => a.classList.toggle('on', a.getAttribute('href') === chapter));
+  const sn = cur.id === 'contact' ? 19 : +cur.dataset.slide;
+  const ck = chapterOf(Math.min(sn, 18));
+  navLinks.forEach((a) => {
+    const k = +a.dataset.ch;
+    a.classList.toggle('on', k === ck && sn <= 18);
+    a.classList.toggle('done', k < ck || sn > 18);
+  });
+  $$('.group-steps li').forEach((li) => {
+    const tn = +li.dataset.for.slice(1);
+    li.className = tn === sn ? 'on' : tn < sn ? 'done' : '';
+  });
+  document.body.dataset.ch = cur.dataset.ch || '';
+  $$('.hdr-nav i').forEach((t) => { const tn = +t.dataset.t; t.className = tn === sn ? 'on' : tn < sn ? 'done' : ''; });
+}
+const bar = $('#progressBar');
+function syncProgress() {
+  const max = document.documentElement.scrollHeight - innerHeight;
+  bar.style.transform = `scaleX(${max > 0 ? Math.min(1, scrollY / max) : 0})`;
 }
 
 /* ════════════════════ 3-b. 6장 강조 · 10장 세 원 ════════════════════ */
@@ -170,17 +357,25 @@ const ease = (t) => t * t * (3 - 2 * t);
 function progressOf(el) {
   const r = el.getBoundingClientRect();
   const span = el.offsetHeight - innerHeight;
-  if (DESK.matches && !REDUCE && span > 40) return clamp01(-r.top / span);   // 고정 구간 진행도
+  const inner = el.querySelector(':scope > .pin-inner');
+  const off = inner ? parseFloat(getComputedStyle(inner).top) || 0 : 0;
+  if (DESK.matches && !REDUCE && span > 40) return clamp01((off - r.top) / (span + off) / (1 - (+el.dataset.hold || 0)));   // 고정 구간 진행도 · data-hold 만큼 끝에서 머문다
   return clamp01((innerHeight * 0.8 - r.top) / (r.height * 0.9));           // 모바일: 지나가는 정도
 }
 const s06 = $('#s06');
 const s10 = $('#s10');
 const map10 = $('.media-map', s10);
+const s04 = $('#s04');
+const s11 = $('#s11');
+const steps11 = [...$$('.flow li', s11), $('.loop', s11)];
 const VC = { x: 220, y: 215 };
 const DIRS = { A: [0, -1], B: [-0.866, 0.5], C: [0.866, 0.5] };
 let lastP06 = -1, lastP10 = -1;
 function scrollFx() {
   updateGalleries();
+  syncProgress();
+  syncReveal();
+  syncFeeds();
   const p6 = progressOf(s06);
   if (Math.abs(p6 - lastP06) > 0.001) {
     lastP06 = p6;
@@ -189,20 +384,28 @@ function scrollFx() {
   const p10 = progressOf(s10);
   if (Math.abs(p10 - lastP10) > 0.001) {
     lastP10 = p10;
-    const e = ease(clamp01(p10 / 0.7));
-    const d = 165 + (62 - 165) * e;
-    const r = 46 + (116 - 46) * e;
+    // ① 가운데 한 점에서 세 원이 퍼져 나온다 → ② 겹친 가운데가 커지며 Casted Media 가 그 안에 선다
+    const e1 = REDUCE ? 1 : ease(clamp01(p10 / 0.24));      // v7: 확장 → 가운데 확대를 앞쪽에 끝내고
+    const e2 = REDUCE ? 1 : ease(clamp01((p10 - 0.3) / 0.28));   // 0.58 이후는 Casted Media 가 머무는 구간
+    const d = 70 * e1 + (26 - 70) * e2;
+    const r = 34 + (112 - 34) * e1 + (168 - 112) * e2;
     for (const k of ['A', 'B', 'C']) {
       const [dx, dy] = DIRS[k];
       const cx = VC.x + dx * d, cy = VC.y + dy * d;
-      $$(`.c${k}`, s10).forEach((c) => { c.setAttribute('cx', cx); c.setAttribute('cy', cy); c.setAttribute('r', r); });
+      $$(`.c${k}`, s10).forEach((c) => { c.setAttribute('cx', cx.toFixed(2)); c.setAttribute('cy', cy.toFixed(2)); c.setAttribute('r', r.toFixed(2)); });
       const t = $(`.t${k}`, s10);
-      t.setAttribute('x', VC.x + dx * (d + r * 0.42 * e));
-      t.setAttribute('y', VC.y + dy * (d + r * 0.42 * e) + 4);
+      const L = d + r * (0.55 + 0.25 * e2);
+      t.setAttribute('x', (VC.x + dx * L).toFixed(1));
+      t.setAttribute('y', (VC.y + dy * L + 4).toFixed(1));
     }
-    map10.style.setProperty('--q', ease(clamp01((p10 - 0.45) / 0.4)).toFixed(3));
-    map10.style.setProperty('--o', ease(clamp01((p10 - 0.25) / 0.35)).toFixed(3));
+    map10.style.setProperty('--e1', e1.toFixed(3));
+    map10.style.setProperty('--e2', e2.toFixed(3));
   }
+  // 04
+  if (morphWord) renderMorph(REDUCE ? 1 : progressOf(s04));
+  // 11 — 단계가 하나씩
+  const p11 = progressOf(s11);
+  steps11.forEach((el, i) => el.classList.toggle('show', REDUCE || p11 > 0.06 + i * 0.13));
 }
 
 /* ════════════════════ 4. 3D — O. 로고가 챕터를 연기한다 ════════════════════ */
@@ -358,23 +561,23 @@ function startGL() {
     const vh = H;
     const raw = [
       [at('s01'), { x: 0, y: 0.27, s: 0.74, lines: 1 }],
-      [at('s02'), { x: 0.58, y: 0.02, s: 0.9, ry: 1.2, rx: 0.2, lines: 0 }],
-      [at('s03'), { x: 0.46, y: -0.02, s: 1.0, ry: -0.35, rx: 0.12, fall: 0 }],
-      [at('s03', 0.62), { x: 0.46, s: 1.02, ry: -0.12, rx: 0.06, fall: 1 }],
-      [at('s03', 1), { x: 0.46, s: 1.02, ry: 0, rx: 0, fall: 1 }],
-      [at('s04') + vh * 0.12, { x: 0.8, y: 0.5, s: 0 }],
-      [at('s12') - vh * 0.5, { x: 0.35, y: 0, s: 0, metal: 1 }],
-      [at('s12'), { x: 0.35, s: 0.72, ry: 0.95, rx: 0.25, metal: 1 }],
-      [at('s12', 0.38), { x: 0.35, s: 1.08, ry: 0, rx: 0, metal: 1 }],
-      [at('s12', 0.62), { x: 0, s: 3.9, away: 0.6, metal: 1 }],   // 링이 화면을 감싸는 '시선의 틀' 순간
+      [at('s02'), { x: 0.66, y: -0.5, s: 0.5, ry: 1.2, rx: 0.2, lines: 0 }],
+      [at('s03'), { x: 0, y: 0.12, s: 0.86, ry: -0.35, rx: 0.12, fall: 0 }],
+      [at('s03', 0.62), { x: 0, y: 0.12, s: 0.9, ry: -0.12, rx: 0.06, fall: 1 }],
+      [at('s03', 1), { x: 0, y: 0.12, s: 0.9, ry: 0, rx: 0, fall: 1 }],
+      [at('s04') - vh * 0.2, { x: 0, y: 0.6, s: 0 }],
+      [at('s12') - vh * 0.5, { x: 0, y: 0.12, s: 0, metal: 1 }],
+      [at('s12'), { x: 0, y: 0.12, s: 0.72, ry: 0.95, rx: 0.25, metal: 1 }],
+      [at('s12', 0.38), { x: 0, y: 0.12, s: 0.95, ry: 0, rx: 0, metal: 1 }],
+      [at('s12', 0.62), { x: 0, y: 0, s: 3.9, away: 0.6, metal: 1 }],   // 링이 화면을 감싸는 '시선의 틀' 순간
       [at('s12', 0.9), { x: 0, s: 17, away: 1, metal: 1 }],
       [at('s12', 1), { x: 0, s: 30, away: 1, metal: 1 }],
       [at('s13') + vh * 0.05, { x: 0, s: 0, away: 0, metal: 0 }],
-      [at('s16') - vh * 0.5, { x: 0.42, s: 0 }],
-      [at('s16'), { x: 0.42, s: 0.82, ry: -0.6, rx: 0.1 }],
-      [at('s16', 0.42), { x: 0.42, s: 1.02, ry: 0, glow: 1 }],
-      [at('s16', 0.95), { x: 0.42, s: 1.02, glow: 1.8, burst: 1 }],
-      [at('s17') - vh * 0.55, { x: 0.42, s: 0, glow: 0, burst: 1 }],   // 포폴 갤러리 전에 완전히 빠진다
+      [at('s16') - vh * 0.5, { x: 0, y: 0.12, s: 0 }],
+      [at('s16'), { x: 0, y: 0.12, s: 0.8, ry: -0.6, rx: 0.1 }],
+      [at('s16', 0.42), { x: 0, y: 0.12, s: 0.92, ry: 0, glow: 1 }],
+      [at('s16', 0.95), { x: 0, y: 0.12, s: 0.92, glow: 1.8, burst: 1 }],
+      [at('s17') - vh * 0.35, { x: 0, y: 0.12, s: 0, glow: 0, burst: 1 }],   // 포폴 갤러리 전에 완전히 빠진다
       [at('contact') - vh * 0.4, { x: 0, y: 0.3, s: 0, burst: 0, metal: 1 }],
       [at('contact') + vh * 0.25, { x: 0, y: 0.34, s: 0.46, metal: 1 }],
     ];

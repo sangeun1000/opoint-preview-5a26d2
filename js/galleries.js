@@ -9,9 +9,16 @@ const esc = (s = '') => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<'
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
 const ease = (t) => t * t * (3 - 2 * t);
 const isVideo = (s) => /\.(mp4|webm|mov)(\?|$)/i.test(s);
-const media = (src) => (isVideo(src)
-  ? `<video class="g-media" src="${esc(src)}" muted loop playsinline autoplay preload="metadata"></video>`
-  : `<img class="g-media" src="${esc(src)}" alt="" loading="lazy">`);
+const ytOf = (s = '') => (String(s).match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/) || [])[1] || '';
+// 유튜브 주소면 무음 자동재생·반복 임베드(스크롤을 막지 않게 클릭은 통과), 아니면 영상/이미지
+const media = (src) => {
+  const [url, fb] = String(src).split('|');   // 'YouTube 주소|사이트 안 대체 영상'
+  const yt = ytOf(url);
+  if (yt) return `<div class="g-media g-yt-embed">${fb ? `<video class="yt-fallback" src="${esc(fb)}" muted loop playsinline autoplay preload="auto"></video>` : ''}<iframe src="https://www.youtube.com/embed/${yt}?autoplay=1&mute=1&loop=1&playlist=${yt}&controls=0&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1&origin=${encodeURIComponent(location.origin)}" title="YouTube" allow="autoplay; encrypted-media; picture-in-picture" tabindex="-1"></iframe></div>`;
+  return isVideo(src)
+    ? `<video class="g-media" src="${esc(src)}" muted loop playsinline autoplay preload="metadata" data-lazyplay></video>`
+    : `<img class="g-media" src="${esc(src)}" alt="" loading="lazy">`;
+};
 const pad = (n) => String(n).padStart(2, '0');
 
 const live = [];
@@ -29,12 +36,23 @@ function pinned(el, sticky) {
   return clamp01((top - r.top) / Math.max(1, r.height - sticky.offsetHeight));
 }
 
+/** 고정(pin) 섹션 전체 진행도 — 갤러리가 고정 구간 안에 있을 때 */
+function sectionProgress(id) {
+  const el = document.getElementById(id);
+  if (!el) return 0;
+  const r = el.getBoundingClientRect();
+  const span = el.offsetHeight - innerHeight;
+  if (span < 40) return passing(el, 0.8, 0.2);
+  return clamp01(-r.top / span / (1 - (+el.dataset.hold || 0)));   // data-hold: 끝부분은 멈춰 있는 구간
+}
+
 export function buildGallery(fig, cfg, { mountDrum }) {
   const items = (cfg.images && cfg.images.length ? cfg.images : ['']);
   const [rw, rh] = String(cfg.ratio || '16 / 9').split('/').map(Number);
   const mode = cfg.mode || 'stack';
   const n = items.length;
-  const cap = `<figcaption class="mono g-cap"><span>[ 교체 ] ${esc(cfg.tag || '')} — ${esc(cfg.spec || '')}</span><span class="g-count">01 / ${pad(n)}</span></figcaption>`;
+  const label = cfg.caption ? esc(cfg.caption) : `[ 교체 ] ${esc(cfg.tag || '')} — ${esc(cfg.spec || '')}`;
+  const cap = `<figcaption class="mono g-cap${cfg.caption ? ' is-real' : ''}"><span>${label}</span><span class="g-count">01 / ${pad(n)}</span></figcaption>`;
   fig.className = `slot g-${mode}${fig.classList.contains('wide') ? ' wide' : ''}`;
   fig.style.setProperty('--ratio', `${rw} / ${rh}`);
   fig.style.setProperty('--ar', (rw / rh).toFixed(4));
@@ -48,12 +66,72 @@ export function buildGallery(fig, cfg, { mountDrum }) {
     return;
   }
 
+  if (mode === 'single') {    // 한 편을 크게 가운데(13장: 크루 4인)
+    fig.innerHTML = `<div class="g-frame single-frame${cfg.fit === 'contain' ? ' is-contain' : ''}">${media(items[0])}</div>${cap.replace(/<span class="g-count">.*?<\/span>/, '')}`;
+    return;
+  }
+
+  if (mode === 'yt') {        // 유튜브 영상 카드 레일(15장: POV) — 누르면 유튜브 새 창
+    const vids = cfg.videos || [];
+    const m = vids.length;
+    const poster = cfg.poster ? `style="background-image:url('${esc(cfg.poster)}')"` : '';
+    fig.style.setProperty('--n', m);
+    fig.className = `slot g-rail g-yt${fig.classList.contains('wide') ? ' wide' : ''}`;
+    const EMBED = (id) => `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&controls=0&playsinline=1&rel=0&modestbranding=1`;
+    fig.innerHTML = `<div class="rail-sticky"><div class="rail-track">${vids.map((v, i) => `<div class="rail-item yt-card" data-yt="${esc(v.id)}">
+        <div class="g-frame yt-thumb" ${poster}><img src="${esc(v.thumb || `https://i.ytimg.com/vi/${v.id}/hqdefault.jpg`)}" alt="" loading="lazy" onerror="this.remove()"><span class="yt-slot"></span>
+          <a class="yt-hit" href="https://youtu.be/${esc(v.id)}" target="_blank" rel="noopener" aria-label="${esc(v.title)} — 유튜브에서 보기"></a>
+          <span class="yt-ep mono">POV ${pad(i + 1)}</span>${v.dur ? `<span class="yt-dur mono">${esc(v.dur)}</span>` : ''}</div>
+        <a class="yt-title" href="https://youtu.be/${esc(v.id)}" target="_blank" rel="noopener">${esc(v.title)}</a><span class="mono rail-no">${pad(i + 1)} / ${pad(m)} · YOUTUBE ↗</span></div>`).join('')}</div>${cap.replace(`01 / ${pad(n)}`, `01 / ${pad(m)}`)}</div>`;
+    const sticky = fig.querySelector('.rail-sticky');
+    const track = fig.querySelector('.rail-track');
+    const count = fig.querySelector('.g-count');
+    const cards = [...fig.querySelectorAll('.yt-card')];
+    // 임베드가 막힌 환경(보안 정책)에서는 썸네일·포스터 카드로 되돌린다
+    document.addEventListener('securitypolicyviolation', (e) => {
+      if (/frame|child|default/.test(e.violatedDirective || e.effectiveDirective || '') && /youtube/.test(e.blockedURI || '')) {
+        fig.classList.add('yt-blocked');
+        fig.querySelectorAll('.yt-slot iframe').forEach((f) => f.remove());
+      }
+    });
+    live.push({ fig, update() {
+      const p = REDUCE ? 0 : pinned(fig, sticky);
+      const travel = Math.max(0, track.scrollWidth - sticky.clientWidth);
+      track.style.transform = `translate3d(${-p * travel}px, 0, 0)`;
+      count.textContent = `${pad(Math.min(m, Math.floor(p * m * 0.999) + 1))} / ${pad(m)}`;
+      // 화면에 들어온 카드만 무음 자동재생(유튜브 임베드)으로 바꾼다 — 한 번 붙이면 유지
+      const fr = fig.getBoundingClientRect();
+      if (fr.top > innerHeight || fr.bottom < 0 || fig.classList.contains('yt-blocked')) return;
+      cards.forEach((c) => {
+        if (c.dataset.on) return;
+        const r = c.getBoundingClientRect();
+        if (r.left < innerWidth * 1.05 && r.right > -innerWidth * 0.05) {
+          c.dataset.on = '1';
+          const f = document.createElement('iframe');
+          f.src = EMBED(c.dataset.yt);
+          f.title = 'YouTube';
+          f.allow = 'autoplay; encrypted-media; picture-in-picture';
+          f.setAttribute('tabindex', '-1');
+          f.addEventListener('load', () => setTimeout(() => { if (!fig.classList.contains('yt-blocked')) c.classList.add('is-live'); }, 400));
+          c.querySelector('.yt-slot').appendChild(f);
+        }
+      });
+    } });
+    return;
+  }
+
+  if (mode === 'duo') {       // 나란한 두 영상(13장: 로고 영상 ／ 크루 4인)
+    const labels = cfg.labels || [];
+    fig.innerHTML = `<div class="duo">${items.map((s, i) => `<div class="duo-item"><div class="g-frame">${media(s)}</div><span class="mono duo-label">${pad(i + 1)}${labels[i] ? ` — ${esc(labels[i])}` : ''}</span></div>`).join('')}</div>${cap}`;
+    return;
+  }
+
   if (mode === 'stack') {
     fig.innerHTML = `<div class="g-frame">${items.map((s, i) => `<div class="card" style="z-index:${n - i}">${media(s)}<span class="mono card-no">${pad(i + 1)}</span></div>`).join('')}</div>${cap}`;
     const cards = [...fig.querySelectorAll('.card')];
     const count = fig.querySelector('.g-count');
     live.push({ fig, update() {
-      const f = REDUCE ? 0 : passing(fig, 0.72, 0.28) * (n - 1);
+      const f = REDUCE ? 0 : (cfg.driver ? clamp01((sectionProgress(cfg.driver) - 0.55) / 0.4) : passing(fig, 0.72, 0.28)) * (n - 1);
       cards.forEach((c, i) => {
         const d = i - f;
         if (d < 0) {                         // 걷힌 카드: 위로 빠지며 사라짐
@@ -95,8 +173,9 @@ export function buildGallery(fig, cfg, { mountDrum }) {
     const sticky = fig.querySelector('.rv-sticky');
     const count = fig.querySelector('.g-count');
     const bar = fig.querySelector('.rv-bar b');
+    const capCount = fig.querySelector('.g-count-cap');
     live.push({ fig, update() {
-      const p = REDUCE ? 1 : pinned(fig, sticky);
+      const p = REDUCE ? 1 : clamp01(pinned(fig, sticky) / (1 - (cfg.hold || 0)));   // hold: 마지막 장에서 머무는 구간
       const s = p * n;
       layers.forEach((L, i) => {
         const e = ease(clamp01(s - i));
@@ -110,6 +189,7 @@ export function buildGallery(fig, cfg, { mountDrum }) {
         m.style.transform = `scale(${1.16 - 0.16 * e})`;
       });
       count.textContent = `${pad(Math.min(n, Math.floor(s * 0.999) + 1))} / ${pad(n)}`;
+      if (capCount) capCount.textContent = count.textContent;
       bar.style.transform = `scaleX(${p})`;
     } });
     return;
@@ -137,3 +217,23 @@ export function updateGalleries() {
     g.update();
   }
 }
+
+/* 유튜브가 실제로 재생될 때만 유튜브를 보이고, 막히면(보안 정책·회사망·퍼가기 제한) 사이트 안 영상을 그대로 둔다 */
+addEventListener('message', (e) => {
+  if (!/youtube/.test(e.origin || '')) return;
+  let d = e.data; try { d = typeof d === 'string' ? JSON.parse(d) : d; } catch { return; }
+  const st = d && d.info && d.info.playerState;
+  if (st !== 1) return;                                   // 1 = 재생 중
+  document.querySelectorAll('.g-yt-embed iframe').forEach((f) => {
+    if (f.contentWindow === e.source) {
+      const box = f.closest('.g-yt-embed'); box.classList.add('yt-on');
+      const v = box.querySelector('.yt-fallback'); if (v) v.pause();
+    }
+  });
+});
+function pingYT() {
+  document.querySelectorAll('.g-yt-embed:not(.yt-on) iframe').forEach((f) => {
+    try { f.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), '*'); } catch {}
+  });
+}
+setInterval(pingYT, 700);
